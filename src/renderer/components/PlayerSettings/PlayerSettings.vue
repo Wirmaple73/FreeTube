@@ -256,6 +256,26 @@
       </FtFlexBox>
       <br>
     </div>
+    <FtFlexBox
+      v-if="USING_ELECTRON"
+      class="localVideoFolderContainer"
+    >
+      <p class="localVideoFolderLabel">
+        {{ t('Settings.Player Settings.Local Video Path') }}
+      </p>
+      <FtInput
+        class="localVideoFolderPath"
+        :placeholder="localVideoPath"
+        :show-action-button="false"
+        :show-label="false"
+        :disabled="true"
+      />
+      <FtButton
+        :label="t('Settings.Player Settings.Local Video Path Button')"
+        class="localVideoFolderButton"
+        @click="chooseLocalVideoPath"
+      />
+    </FtFlexBox>
   </FtSettingsSection>
 </template>
 
@@ -648,6 +668,21 @@ function chooseScreenshotFolder() {
   // only use with electron
   if (process.env.IS_ELECTRON) {
     window.ftElectron.chooseDefaultFolder()
+  }
+}
+
+/** @type {import('vue').ComputedRef<string>} */
+const localVideoPath = computed(() => store.getters.getLocalVideoPath)
+
+async function chooseLocalVideoPath() {
+  // only use with electron
+  if (!process.env.IS_ELECTRON) {
+    return
+  }
+
+  const folderPath = await window.ftElectron.chooseLocalVideoPath()
+  if (typeof folderPath === 'string' && folderPath.length > 0) {
+    store.dispatch('updateLocalVideoPath', folderPath)
   }
 }
 

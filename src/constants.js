@@ -48,6 +48,8 @@ const IpcChannels = {
 
   CHOOSE_DEFAULT_FOLDER: 'choose-default-folder',
   WRITE_TO_DEFAULT_FOLDER: 'write-to-default-folder',
+  CHOOSE_LOCAL_VIDEO_PATH: 'choose-local-video-path',
+  GET_LOCAL_VIDEOS: 'get-local-videos',
 
   OPEN_IN_EXTERNAL_PLAYER: 'open-in-external-player',
   OPEN_IN_EXTERNAL_PLAYER_RESULT: 'open-in-external-player-result'

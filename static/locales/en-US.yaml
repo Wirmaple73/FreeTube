@@ -43,6 +43,7 @@ Global:
   Shorts: Shorts
   Live: Live
   Posts: Posts
+  Local: Local
   Sort By: Sort By
   Counts:
     Video Count: 1 video | {count} videos
@@ -130,6 +131,7 @@ Subscriptions:
   Disabled Automatic Fetching: You have disabled automatic subscription fetching. Refresh subscriptions to see them here.
   Empty Channels: Your subscribed channels currently does not have any videos.
   Empty Posts: Your subscribed channels currently do not have any posts.
+  Empty Local Videos: No local videos found in the configured local video folder.
   Load More Videos: Load More Videos
   Load More Posts: Load More Posts
   Subscriptions Tabs: Subscriptions Tabs
@@ -458,6 +460,9 @@ Settings:
     Scroll Volume Over Video Player: Scroll Volume Over Video Player
     Scroll Playback Rate Over Video Player: Scroll Playback Rate Over Video Player
     Skip by Scrolling Over Video Player: Skip by Scrolling Over Video Player
+    Local Video Path: The folder where your local videos are stored. These videos
+      will appear in the "Local" tab on the Subscriptions page.
+    Local Video Path Button: Choose
     Display Play Button In Video Player: Display Play Button In Video Player
     Enter Fullscreen on Display Rotate: Enter Fullscreen on Display Rotate
     Next Video Interval: Autoplay Countdown Timer

@@ -93,6 +93,25 @@
           />
           {{ $t("Global.Posts") }}
         </div>
+        <!-- eslint-disable-next-line vuejs-accessibility/interactive-supports-focus -->
+        <div
+          ref="localTab"
+          class="tab"
+          role="tab"
+          :aria-selected="currentTab === 'local'"
+          aria-controls="subscriptionsPanel"
+          :tabindex="currentTab === 'local' ? 0 : -1"
+          :class="{ selectedTab: currentTab === 'local' }"
+          @click="changeTab('local')"
+          @keydown.space.enter.prevent="changeTab('local')"
+          @keydown.left.right="focusTab($event, 'local')"
+        >
+          <FontAwesomeIcon
+            :icon="['fa', 'folder']"
+            class="subscriptionIcon"
+          />
+          {{ $t("Global.Local") }}
+        </div>
       </FtFlexBox>
       <SubscriptionsVideos
         v-if="currentTab === 'videos'"
@@ -111,6 +130,11 @@
       />
       <SubscriptionsPosts
         v-else-if="currentTab === 'community'"
+        id="subscriptionsPanel"
+        role="tabpanel"
+      />
+      <SubscriptionsLocal
+        v-else-if="currentTab === 'local'"
         id="subscriptionsPanel"
         role="tabpanel"
       />
@@ -134,6 +158,7 @@ import SubscriptionsVideos from '../../components/SubscriptionsVideos.vue'
 import SubscriptionsLive from '../../components/SubscriptionsLive.vue'
 import SubscriptionsShorts from '../../components/SubscriptionsShorts.vue'
 import SubscriptionsPosts from '../../components/SubscriptionPosts/SubscriptionsPosts.vue'
+import SubscriptionsLocal from '../../components/SubscriptionsLocal.vue'
 
 import store from '../../store/index'
 
@@ -157,7 +182,12 @@ const hideSubscriptionsCommunity = computed(() => {
   return store.getters.getHideSubscriptionsCommunity
 })
 
-/** @type {import('vue').Ref<'videos' | 'shorts' | 'live' | 'community' | null>} */
+/** @type {import('vue').ComputedRef<string>} */
+const localVideoPath = computed(() => {
+  return store.getters.getLocalVideoPath
+})
+
+/** @type {import('vue').Ref<'videos' | 'shorts' | 'live' | 'community' | 'local' | null>} */
 const currentTab = ref('videos')
 
 watch(currentTab, (value) => {
@@ -170,7 +200,7 @@ watch(currentTab, (value) => {
 })
 
 const visibleTabs = computed(() => {
-  /** @type {('videos' | 'shorts' | 'live' | 'community')[]} */
+  /** @type {('videos' | 'shorts' | 'live' | 'community' | 'local')[]} */
   const tabs = []
 
   if (!hideSubscriptionsVideos.value) {
@@ -187,6 +217,10 @@ const visibleTabs = computed(() => {
 
   if (!hideSubscriptionsCommunity.value) {
     tabs.push('community')
+  }
+
+  if (localVideoPath.value !== '') {
+    tabs.push('local')
   }
 
   return tabs
@@ -213,7 +247,7 @@ if (visibleTabs.value.length === 0) {
 }
 
 /**
- * @param {'videos' | 'shorts' | 'live' | 'community'} tab
+ * @param {'videos' | 'shorts' | 'live' | 'community' | 'local'} tab
  */
 function changeTab(tab) {
   if (tab === currentTab.value) {
@@ -232,10 +266,11 @@ const videosTab = useTemplateRef('videosTab')
 const liveTab = useTemplateRef('liveTab')
 const shortsTab = useTemplateRef('shortsTab')
 const communityTab = useTemplateRef('communityTab')
+const localTab = useTemplateRef('localTab')
 
 /**
  * @param {KeyboardEvent} event
- * @param {'videos' | 'shorts' | 'live' | 'community'} focusedTab
+ * @param {'videos' | 'shorts' | 'live' | 'community' | 'local'} focusedTab
  */
 function focusTab(event, focusedTab) {
   if (event.altKey) {
@@ -277,6 +312,9 @@ function focusTab(event, focusedTab) {
       break
     case 'community':
       communityTab.value?.focus()
+      break
+    case 'local':
+      localTab.value?.focus()
       break
   }
 

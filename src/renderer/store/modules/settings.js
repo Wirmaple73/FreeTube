@@ -301,6 +301,7 @@ const state = {
   screenshotQuality: 95,
   screenshotFolderPath: '',
   screenshotFilenamePattern: '%Y%M%D-%H%N%S',
+  localVideoPath: '',
   settingsSectionSortEnabled: false,
   fetchSubscriptionsAutomatically: true,
   settingsPassword: '',
@@ -445,6 +446,7 @@ export const NON_TRANSFERABLE_SETTINGS = new Set([
   'hideToTrayOnMinimize',
   'screenshotAskPath',
   'screenshotFolderPath',
+  'localVideoPath',
 
   /* Depends on process.env.SUPPORTS_LOCAL_API */
   'backendFallback',

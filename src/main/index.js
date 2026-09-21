@@ -33,6 +33,38 @@ import { isFreeTubeUrl } from './utils'
 
 const brotliDecompressAsync = promisify(brotliDecompress)
 
+/**
+ * @typedef {{
+ *   videoId: string,
+ *   title: string,
+ *   filePath: string,
+ *   lengthSeconds: number,
+ *   type: 'video',
+ *   author: '',
+ * }} LocalVideoInfo
+ */
+
+/** File extensions (lowercase, with leading dot) that the "Local" subscriptions tab picks up */
+const LOCAL_VIDEO_FILE_EXTENSIONS = new Set([
+  '.mp4', '.m4v', '.webm', '.mkv', '.avi', '.mov', '.flv', '.wmv', '.mpg', '.mpeg', '.ts', '.3gp',
+  '.mp3', '.m4a', '.aac', '.ogg', '.oga', '.opus', '.wav', '.flac'
+])
+
+/**
+ * A small deterministic string hash used to derive a stable synthetic video id
+ * from a local file path, so the same file always maps to the same id.
+ * @param {string} input
+ * @returns {string}
+ */
+function hashString(input) {
+  let hash = 0
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) - hash) + input.charCodeAt(i)
+    hash |= 0
+  }
+  return Math.abs(hash).toString(36)
+}
+
 if (process.argv.includes('--version')) {
   console.log(`v${packageDetails.version} Beta`) // eslint-disable-line no-console
   app.exit()
@@ -1450,6 +1482,57 @@ function runApp() {
     const currentPath = (await baseHandlers.settings._findOne('screenshotFolderPath'))?.value
 
     await chooseDefaultFolder(event.sender, currentPath)
+  })
+
+  ipcMain.handle(IpcChannels.CHOOSE_LOCAL_VIDEO_PATH, async (event) => {
+    if (!isFreeTubeUrl(event.senderFrame.url)) {
+      return
+    }
+
+    const currentPath = (await baseHandlers.settings._findOne('localVideoPath'))?.value
+
+    const dialogOptions = {
+      defaultPath: typeof currentPath === 'string' && currentPath.length > 0 ? currentPath : app.getPath('videos'),
+      properties: ['openDirectory']
+    }
+
+    const window = BrowserWindow.fromWebContents(event.sender)
+    const result = window
+      ? await dialog.showOpenDialog(window, dialogOptions)
+      : await dialog.showOpenDialog(dialogOptions)
+
+    // The chosen path is persisted by the renderer via `updateLocalVideoPath`,
+    // which keeps the store and database in sync
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle(IpcChannels.GET_LOCAL_VIDEOS, async (event, directory) => {
+    if (
+      !isFreeTubeUrl(event.senderFrame.url) ||
+      typeof directory !== 'string' ||
+      directory.length === 0
+    ) {
+      return []
+    }
+
+    try {
+      const entries = await asyncFs.readdir(directory, { withFileTypes: true })
+
+      return entries
+        .filter((entry) => entry.isFile() && LOCAL_VIDEO_FILE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()))
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((entry) => ({
+          videoId: `local-${hashString(path.join(directory, entry.name))}`,
+          title: path.parse(entry.name).name,
+          filePath: path.join(directory, entry.name),
+          lengthSeconds: 0,
+          type: 'video',
+          author: '',
+        }))
+    } catch (error) {
+      console.error(error)
+      return []
+    }
   })
 
   ipcMain.handle(IpcChannels.WRITE_TO_DEFAULT_FOLDER, async (event, filename, arrayBuffer) => {

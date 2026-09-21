@@ -143,6 +143,21 @@ export default {
   },
 
   /**
+   * @returns {Promise<string|null>}
+   */
+  chooseLocalVideoPath: () => {
+    return ipcRenderer.invoke(IpcChannels.CHOOSE_LOCAL_VIDEO_PATH)
+  },
+
+  /**
+   * @param {string} directory
+   * @returns {Promise<import('../main/index').LocalVideoInfo[]>}
+   */
+  getLocalVideos: (directory) => {
+    return ipcRenderer.invoke(IpcChannels.GET_LOCAL_VIDEOS, directory)
+  },
+
+  /**
    * @param {string} filename
    * @param {ArrayBuffer} contents
    * @returns {Promise<boolean>}

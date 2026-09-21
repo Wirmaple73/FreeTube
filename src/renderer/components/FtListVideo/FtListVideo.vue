@@ -725,6 +725,11 @@ function handleOptionsClick(option) {
 }
 
 const thumbnail = computed(() => {
+  // Local files have no thumbnail on YouTube, use the placeholder instead
+  if (props.data.isLocal === true) {
+    return thumbnailPlaceholder
+  }
+
   if (thumbnailPreference.value === 'hidden') {
     return thumbnailPlaceholder
   }
@@ -881,6 +886,12 @@ const watchPageLinkQuery = computed(() => {
 
   if (playlistItemIdFinal.value) {
     query.playlistItemId = playlistItemIdFinal.value
+  }
+
+  // Local files played from the "Local" subscriptions tab
+  if (props.data.isLocal === true && typeof props.data.filePath === 'string') {
+    query.local = '1'
+    query.path = props.data.filePath
   }
 
   return query

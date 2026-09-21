@@ -254,6 +254,9 @@ export default defineComponent({
     hideVideoLikesAndDislikes: function () {
       return this.$store.getters.getHideVideoLikesAndDislikes
     },
+    isLocalVideo: function () {
+      return this.$route.query?.local === '1' && typeof this.$route.query.path === 'string'
+    },
     theatrePossible: function () {
       return !this.hideRecommendedVideos || (!this.hideLiveChat && this.isLive) || this.watchingPlaylist
     },
@@ -374,6 +377,11 @@ export default defineComponent({
       this.checkIfPlaylist()
       this.setViewingModeOnRouteChange()
 
+      if (this.isLocalVideo) {
+        this.loadLocalVideo()
+        return
+      }
+
       switch (this.backendPreference) {
         case 'local':
           await this.getVideoInformationLocal()
@@ -443,7 +451,9 @@ export default defineComponent({
       // this has to be below checkIfPlaylist() as theatrePossible needs to know if there is a playlist or not
       this.setViewingModeOnFirstLoad()
 
-      if (!process.env.SUPPORTS_LOCAL_API || this.backendPreference === 'invidious') {
+      if (this.isLocalVideo) {
+        this.loadLocalVideo()
+      } else if (!process.env.SUPPORTS_LOCAL_API || this.backendPreference === 'invidious') {
         this.getVideoInformationInvidious()
       } else {
         this.getVideoInformationLocal()
@@ -493,6 +503,56 @@ export default defineComponent({
       if (!this.isLoading && player?.hasLoaded) {
         player.setCurrentTime(timestamp)
       }
+    },
+
+    loadLocalVideo: function () {
+      const filePath = this.$route.query.path
+
+      // Derive a nicer title from the file name (without extension)
+      const fileName = filePath.split(/[\\/]/).pop() ?? filePath
+      this.videoTitle = fileName.replace(/\.[^.]+$/, '')
+
+      // Map the file extension to a mime type so shaka-player can probe it correctly
+      const dotIndex = filePath.lastIndexOf('.')
+      const extension = dotIndex > filePath.lastIndexOf(/[\\/]/) ? filePath.slice(dotIndex).toLowerCase() : ''
+      const LOCAL_VIDEO_MIME_TYPES = {
+        '.mp4': 'video/mp4',
+        '.m4v': 'video/mp4',
+        '.webm': 'video/webm',
+        '.mkv': 'video/x-matroska',
+        '.avi': 'video/x-msvideo',
+        '.mov': 'video/quicktime',
+        '.flv': 'video/x-flv',
+        '.wmv': 'video/x-ms-wmv',
+        '.mpg': 'video/mpeg',
+        '.mpeg': 'video/mpeg',
+        '.ts': 'video/mp2t',
+        '.3gp': 'video/3gpp',
+        '.mp3': 'audio/mpeg',
+        '.m4a': 'audio/mp4',
+        '.aac': 'audio/aac',
+        '.ogg': 'audio/ogg',
+        '.oga': 'audio/ogg',
+        '.opus': 'audio/ogg',
+        '.wav': 'audio/wav',
+        '.flac': 'audio/flac',
+      }
+      const mimeType = LOCAL_VIDEO_MIME_TYPES[extension]
+
+      // Play the file directly via shaka-player's legacy (progressive) mode
+      this.activeFormat = 'legacy'
+      this.manifestSrc = null
+      this.manifestMimeType = MANIFEST_TYPE_DASH
+      this.legacyFormats = [{
+        url: `file://${filePath}`,
+        mimeType,
+        bitrate: 0,
+        height: 0,
+        width: 0,
+        label: 'local',
+      }]
+      this.isLoading = false
+      this.updateTitle()
     },
 
     getVideoInformationLocal: async function () {
